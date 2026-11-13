@@ -1,0 +1,83 @@
+const SPREADSHEET_ID = '1dkPAOIbdIFVPzGDF5sPz6SG6RMn6-nIu-V7wN_ZtTwo';
+
+// 웹 앱 접속 시 라우팅
+function doGet(e) {
+  const param = e.parameter.p;
+  if (param === 'admin') {
+    return HtmlService.createHtmlOutputFromFile('admin')
+      .setTitle('동아리 관리자 페이지')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  } else {
+    return HtmlService.createHtmlOutputFromFile('index')
+      .setTitle('동아리 활동 기록지')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  }
+}
+
+// 1. 데이터 저장 (index.html 용)
+function saveRecord(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0];
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['제출일시', '이름', '활동날짜', '분야', '활동주제', '활동내용']);
+    }
+
+    sheet.appendRow([
+      new Date(),
+      data.name,
+      data.date,
+      data.category,
+      data.topic,
+      data.content
+    ]);
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+// 2. 모든 데이터 불러오기 (admin.html 용)
+function getAllRecords() {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0];
+    const rows = sheet.getDataRange().getValues();
+
+    if (rows.length <= 1) {
+      return [];
+    }
+
+    const records = [];
+    for (let i = 1; i < rows.length; i++) {
+      records.push({
+        rowNumber: i + 1,
+        timestamp: rows[i][0],
+        name: rows[i][1],
+        date: rows[i][2],
+        category: rows[i][3],
+        topic: rows[i][4],
+        content: rows[i][5]
+      });
+    }
+    return records.reverse(); // 최신순 정렬
+  } catch (e) {
+    throw new Error(e.toString());
+  }
+}
+
+// 3. 기록 삭제 (admin.html 용)
+function deleteRecord(rowNumber) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0];
+    sheet.deleteRow(rowNumber);
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
