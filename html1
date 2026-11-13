@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { background: #ffffff; width: 100%; max-width: 520px; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); }
+    h2 { margin-top: 0; margin-bottom: 24px; color: #1e293b; font-size: 22px; text-align: center; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; font-size: 14px; }
+    input[type="text"], input[type="date"], textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; }
+    input:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+    textarea { resize: vertical; min-height: 120px; }
+    .category-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .category-item input[type="radio"] { display: none; }
+    .category-item label { display: block; text-align: center; padding: 10px 0; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: 500; color: #475569; margin: 0; }
+    .category-item input[type="radio"]:checked + label { background-color: #3b82f6; color: #ffffff; border-color: #3b82f6; font-weight: 600; }
+    button { width: 100%; padding: 14px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    button:hover { background-color: #1d4ed8; }
+    button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+    #status { margin-top: 14px; text-align: center; font-size: 14px; font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>🔬 동아리 활동 기록지</h2>
+  <form id="recordForm" onsubmit="handleFormSubmit(event)">
+    <div class="form-group">
+      <label for="name">이름</label>
+      <input type="text" id="name" placeholder="예: 홍길동" required>
+    </div>
+    <div class="form-group">
+      <label for="date">활동 날짜</label>
+      <input type="date" id="date" required>
+    </div>
+    <div class="form-group">
+      <label>활동 분야</label>
+      <div class="category-group">
+        <div class="category-item"><input type="radio" id="cat-chem" name="category" value="화학" required><label for="cat-chem">화학</label></div>
+        <div class="category-item"><input type="radio" id="cat-phys" name="category" value="물리"><label for="cat-phys">물리</label></div>
+        <div class="category-item"><input type="radio" id="cat-bio" name="category" value="생명"><label for="cat-bio">생명</label></div>
+        <div class="category-item"><input type="radio" id="cat-eng" name="category" value="공학"><label for="cat-eng">공학</label></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="topic">활동 주제</label>
+      <input type="text" id="topic" placeholder="예: 중화 적정 실험" required>
+    </div>
+    <div class="form-group">
+      <label for="content">활동 내용 및 느낀 점</label>
+      <textarea id="content" placeholder="실험 과정 및 결과 작성" required></textarea>
+    </div>
+    <button type="submit" id="submitBtn">기록 제출하기</button>
+    <div id="status"></div>
+  </form>
+</div>
+<script>
+  document.getElementById('date').valueAsDate = new Date();
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('status');
+    btn.disabled = true;
+    btn.innerText = '저장 중...';
+    
+    const formData = {
+      name: document.getElementById('name').value,
+      date: document.getElementById('date').value,
+      category: document.querySelector('input[name="category"]:checked').value,
+      topic: document.getElementById('topic').value,
+      content: document.getElementById('content').value
+    };
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          status.style.color = '#16a34a';
+          status.innerText = '✅ 기록이 저장되었습니다!';
+          document.getElementById('recordForm').reset();
+          document.getElementById('date').valueAsDate = new Date();
+        } else {
+          status.style.color = '#dc2626';
+          status.innerText = '❌ 오류: ' + res.message;
+        }
+        btn.disabled = false;
+        btn.innerText = '기록 제출하기';
+      })
+      .withFailureHandler(function(err) {
+        status.style.color = '#dc2626';
+        status.innerText = '❌ 통신 오류: ' + err;
+        btn.disabled = false;
+        btn.innerText = '기록 제출하기';
+      })
+      .saveRecord(formData);
+  }
+</script>
+</body>
+</html>
